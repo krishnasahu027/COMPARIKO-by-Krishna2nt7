@@ -1,0 +1,21 @@
+name: Update last updated
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'logos/**']
+permissions:
+  contents: write
+jobs:
+  stamp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set date
+        run: |
+          D=$(TZ=Asia/Kolkata date +"%-d %B %Y, %-I:%M %p IST")
+          sed -i "s|^const LAST_UPDATED=.*|const LAST_UPDATED=\"$D\";|" index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git diff --quiet || (git commit -am "Update last updated date" && git push)
