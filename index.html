@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>COMPARIKO by Krishna2nt7</title>
+<title>Company Compare</title>
 <style>
 :root{--bg:#f6f7f4;--card:#fff;--ink:#1c2321;--mute:#5d6862;--line:#d9ded8;--accent:#1f6f5c;--accent-ink:#fff;--sel:#e3f1ec}
 @media (prefers-color-scheme:dark){:root{--bg:#121816;--card:#1b2320;--ink:#e8ede9;--mute:#9aa8a1;--line:#2e3a35;--accent:#5fc3a8;--accent-ink:#0d1512;--sel:#22342e}}
@@ -21,8 +21,12 @@ h1{font-size:1.9rem;margin:0 0 4px;letter-spacing:-.01em}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
 .card.sel{border-color:var(--accent);background:var(--sel)}
-.card h2{font-size:1.2rem;margin:0}
-.cat{font:.8rem system-ui,sans-serif;color:var(--mute);margin:2px 0 10px}
+.head{display:flex;gap:12px;align-items:center}
+.logo{position:relative;flex:none;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);display:grid;place-items:center;font:700 1.1rem system-ui,sans-serif;overflow:hidden}
+.logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:6px;background:#fff}
+.card h2{font-size:1.2rem;margin:0;font-weight:700}
+.legal{font:.82rem system-ui,sans-serif;color:var(--mute);margin-top:1px}
+.cat{font:.8rem system-ui,sans-serif;color:var(--mute);margin:10px 0 2px}
 dl{margin:0;font-family:system-ui,sans-serif;font-size:.9rem}
 dt{color:var(--mute);margin-top:7px}
 dd{margin:0}
@@ -47,7 +51,7 @@ td:first-child,th:first-child{color:var(--mute);white-space:nowrap}
 </head>
 <body>
 <div class="wrap">
-  <h1>COMPARIKO-by-Krishna2nt7</h1>
+  <h1>Company Compare</h1>
   <p class="sub">Founders, CEOs, founding year and fees across categories. Tick companies to compare them side by side.</p>
   <div class="tabs" id="tabs" role="tablist"></div>
   <div class="bar">
@@ -97,8 +101,36 @@ const DATA = [
  {n:"Vijay Sales",cat:"Electronics",f:["Nanu Gupta"],y:1967,ceo:"Nilesh Gupta",fees:[["Type","Retailer, no seller commission published"]]},
  {n:"boAt",cat:"Electronics",f:["Aman Gupta","Sameer Mehta"],y:2016,ceo:"Sameer Mehta (co-founder)",fees:[["Type","Brand, sells via marketplaces and own store"]]}
 ];
+
+// Legal (registered) company name and website for each logo
+const LEGAL={
+"Amazon India":["Amazon Seller Services Private Limited","amazon.in"],
+"Flipkart":["Flipkart Internet Private Limited","flipkart.com"],
+"Meesho":["Meesho Limited (earlier Fashnear Technologies Pvt. Ltd.)","meesho.com"],
+"Myntra":["Myntra Designs Private Limited","myntra.com"],
+"Zomato":["Eternal Limited (earlier Zomato Limited)","zomato.com"],
+"Swiggy":["Swiggy Limited (earlier Bundl Technologies Pvt. Ltd.)","swiggy.com"],
+"Blinkit":["Blink Commerce Private Limited (part of Eternal Limited)","blinkit.com"],
+"Zepto":["Kiranakart Technologies Private Limited","zeptonow.com"],
+"Swiggy Instamart":["Swiggy Limited","swiggy.com"],
+"Zerodha":["Zerodha Broking Limited","zerodha.com"],
+"Groww":["Billionbrains Garage Ventures Limited (broking: Nextbillion Technology Pvt. Ltd.)","groww.in"],
+"Upstox":["RKSV Securities India Private Limited","upstox.com"],
+"Angel One":["Angel One Limited (earlier Angel Broking Limited)","angelone.in"],
+"5paisa":["5paisa Capital Limited","5paisa.com"],
+"Croma":["Infiniti Retail Limited","croma.com"],
+"Reliance Digital":["Reliance Retail Limited","reliancedigital.in"],
+"Vijay Sales":["Vijay Sales (India) Private Limited","vijaysales.com"],
+"boAt":["Imagine Marketing Limited","boat-lifestyle.com"]
+};
+DATA.forEach(d=>{const l=LEGAL[d.n]||["",""];d.legal=l[0];d.dom=l[1]});
 // ===============================
 
+
+const BRAND={"Amazon India":"#232f3e","Flipkart":"#2874f0","Meesho":"#9f2089","Myntra":"#ff3f6c","Zomato":"#e23744","Swiggy":"#fc8019","Blinkit":"#f8cb46","Zepto":"#5a2a82","Swiggy Instamart":"#fc8019","Zerodha":"#387ed1","Groww":"#00b386","Upstox":"#5a2ea6","Angel One":"#f26522","5paisa":"#00a0e3","Croma":"#00bfa5","Reliance Digital":"#d71920","Vijay Sales":"#e31e24","boAt":"#1a1a1a"};
+const slug=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+const SRC=[(d,s)=>"logos/"+s+".png",d=>"https://www.google.com/s2/favicons?domain="+d+"&sz=128",d=>"https://icons.duckduckgo.com/ip3/"+d+".ico",d=>"https://"+d+"/favicon.ico"];
+function logoErr(img){const i=+img.dataset.i+1;if(i<SRC.length){img.dataset.i=i;img.src=SRC[i](img.dataset.d,img.dataset.s)}else img.remove()}
 const cats=["All",...new Set(DATA.map(d=>d.cat))];
 let cat="All",picked=new Set();
 const $=id=>document.getElementById(id);
@@ -111,11 +143,11 @@ function tabs(){
 
 function list(){
   const q=$("q").value.trim().toLowerCase(),s=$("sort").value;
-  let r=DATA.filter(d=>(cat==="All"||d.cat===cat)&&(d.n+d.f.join(" ")+d.ceo).toLowerCase().includes(q));
+  let r=DATA.filter(d=>(cat==="All"||d.cat===cat)&&(d.n+d.legal+d.f.join(" ")+d.ceo).toLowerCase().includes(q));
   r.sort((a,b)=>s==="az"?a.n.localeCompare(b.n):s==="za"?b.n.localeCompare(a.n):s==="new"?b.y-a.y:a.y-b.y);
   $("grid").innerHTML=r.length?r.map(d=>`
    <article class="card ${picked.has(d.n)?"sel":""}">
-     <h2>${esc(d.n)}</h2><div class="cat">${esc(d.cat)}</div>
+     <div class="head"><span class="logo" style="background:${BRAND[d.n]||"#1f6f5c"};color:#fff">${esc(d.n[0])}${d.dom?`<img src="${SRC[0](d.dom,slug(d.n))}" data-d="${d.dom}" data-s="${slug(d.n)}" data-i="0" alt="" onerror="logoErr(this)">`:""}</span><div><h2>${esc(d.n)}</h2><div class="legal">${esc(d.legal)}</div></div></div><div class="cat">${esc(d.cat)}</div>
      <dl><dt>Founders</dt><dd>${esc(d.f.join(", "))}</dd>
      <dt>Founded</dt><dd>${d.y}</dd>
      <dt>CEO</dt><dd>${esc(d.ceo)}</dd></dl>
@@ -137,7 +169,7 @@ function compare(){
   const feeKeys=[...new Set(r.flatMap(d=>d.fees.map(x=>x[0])))];
   const row=(l,fn)=>`<tr><td>${l}</td>${r.map(d=>`<td>${esc(fn(d))}</td>`).join("")}</tr>`;
   $("tbl").innerHTML=`<tr><th></th>${r.map(d=>`<th>${esc(d.n)}</th>`).join("")}</tr>`
-   +row("Category",d=>d.cat)+row("Founders",d=>d.f.join(", "))+row("Founded",d=>d.y)+row("CEO",d=>d.ceo)
+   +row("Legal name",d=>d.legal)+row("Category",d=>d.cat)+row("Founders",d=>d.f.join(", "))+row("Founded",d=>d.y)+row("CEO",d=>d.ceo)
    +feeKeys.map(k=>row(k,d=>(d.fees.find(x=>x[0]===k)||[0,"Not listed"])[1])).join("");
   $("cmp").classList.add("on");
   $("cmp").scrollIntoView({behavior:"smooth"});
@@ -151,5 +183,4 @@ $("show").onclick=compare;
 tabs();list();dock();
 </script>
 </body>
-  </html>
-  
+</html>
