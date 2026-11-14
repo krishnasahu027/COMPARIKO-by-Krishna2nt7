@@ -1,1 +1,155 @@
-<h1>Hello, world!</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company Compare</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#1c2321;--mute:#5d6862;--line:#d9ded8;--accent:#1f6f5c;--accent-ink:#fff;--sel:#e3f1ec}
+@media (prefers-color-scheme:dark){:root{--bg:#121816;--card:#1b2320;--ink:#e8ede9;--mute:#9aa8a1;--line:#2e3a35;--accent:#5fc3a8;--accent-ink:#0d1512;--sel:#22342e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 120px}
+h1{font-size:1.9rem;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 18px;font-family:system-ui,sans-serif;font-size:.95rem}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;font-family:system-ui,sans-serif}
+.tab{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 15px;border-radius:999px;cursor:pointer;font-size:.92rem}
+.tab[aria-selected=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 18px;font-family:system-ui,sans-serif}
+.bar input,.bar select{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:.95rem}
+.bar input{flex:1;min-width:160px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card.sel{border-color:var(--accent);background:var(--sel)}
+.card h2{font-size:1.2rem;margin:0}
+.cat{font:.8rem system-ui,sans-serif;color:var(--mute);margin:2px 0 10px}
+dl{margin:0;font-family:system-ui,sans-serif;font-size:.9rem}
+dt{color:var(--mute);margin-top:7px}
+dd{margin:0}
+.fee{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.pick{display:flex;align-items:center;gap:8px;margin-top:12px;font:.9rem system-ui,sans-serif;cursor:pointer}
+.pick input{width:18px;height:18px;accent-color:var(--accent)}
+.dock{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px;font-family:system-ui,sans-serif;display:none;justify-content:space-between;align-items:center;gap:10px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.dock.on{display:flex}
+button.go{background:var(--accent);color:var(--accent-ink);border:0;padding:10px 18px;border-radius:8px;font-size:.95rem;cursor:pointer}
+button.ghost{background:none;border:1px solid var(--line);color:var(--ink);padding:10px 14px;border-radius:8px;cursor:pointer}
+.cmp{display:none;margin-top:26px}
+.cmp.on{display:block}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-family:system-ui,sans-serif;font-size:.92rem}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:600}
+td:first-child,th:first-child{color:var(--mute);white-space:nowrap}
+.note{color:var(--mute);font:.82rem/1.5 system-ui,sans-serif;margin-top:22px}
+.empty{color:var(--mute);font-family:system-ui,sans-serif;padding:30px 0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Company Compare</h1>
+  <p class="sub">Founders, CEOs, founding year and fees across categories. Tick companies to compare them side by side.</p>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search company, founder or CEO" aria-label="Search">
+    <select id="sort" aria-label="Sort">
+      <option value="az">A to Z</option>
+      <option value="za">Z to A</option>
+      <option value="new">Newest first</option>
+      <option value="old">Oldest first</option>
+    </select>
+  </div>
+  <div class="grid" id="grid"></div>
+  <section class="cmp" id="cmp">
+    <h2>Side-by-side comparison</h2>
+    <div class="scroll"><table id="tbl"></table></div>
+  </section>
+  <p class="note">Data is approximate and for learning. Fees, CEOs and plans change often, so check each company’s official website before relying on them. To add or fix a company, edit the DATA list at the top of the script in this file.</p>
+</div>
+<div class="dock" id="dock">
+  <span id="count"></span>
+  <span><button class="ghost" id="clear">Clear</button> <button class="go" id="show">Compare</button></span>
+</div>
+
+<script>
+// ===== EDIT YOUR DATA HERE =====
+// fees: list of [label, value]. cat must match one of the tab names.
+const DATA = [
+ {n:"Amazon India",cat:"E-commerce",f:["Jeff Bezos"],y:1994,ceo:"Andy Jassy (Amazon); Manish Tiwary (India)",fees:[["Seller referral fee","About 2% to 20%, depends on category"],["Other","Closing fee and shipping fee extra"]]},
+ {n:"Flipkart",cat:"E-commerce",f:["Sachin Bansal","Binny Bansal"],y:2007,ceo:"Kalyan Krishnamurthy",fees:[["Seller commission","About 5% to 20%, depends on category"],["Other","Fixed fee and shipping fee extra"]]},
+ {n:"Meesho",cat:"E-commerce",f:["Vidit Aatrey","Sanjeev Barnwal"],y:2015,ceo:"Vidit Aatrey",fees:[["Seller commission","0% (zero commission model)"],["Other","Shipping and returns charges apply"]]},
+ {n:"Myntra",cat:"E-commerce",f:["Mukesh Bansal","Ashutosh Lawania","Vineet Saxena"],y:2007,ceo:"Nandita Sinha",fees:[["Seller commission","Category based, roughly 10% to 30%"],["Other","Fixed and shipping fee extra"]]},
+
+ {n:"Zomato",cat:"Food & Quick Commerce",f:["Deepinder Goyal","Pankaj Chaddah"],y:2008,ceo:"Deepinder Goyal (check latest)",fees:[["Restaurant commission","About 16% to 30%, plan based"],["Customer","Delivery, platform and packaging fee"]]},
+ {n:"Swiggy",cat:"Food & Quick Commerce",f:["Sriharsha Majety","Nandan Reddy","Rahul Jaimini"],y:2014,ceo:"Sriharsha Majety",fees:[["Restaurant commission","About 15% to 30%, plan based"],["Customer","Delivery, platform and packaging fee"]]},
+ {n:"Blinkit",cat:"Food & Quick Commerce",f:["Albinder Dhindsa","Saurabh Kumar"],y:2013,ceo:"Albinder Dhindsa",fees:[["Seller / brand margin","Product based, roughly 10% to 25%"],["Customer","Handling and delivery fee on small orders"]]},
+ {n:"Zepto",cat:"Food & Quick Commerce",f:["Aadit Palicha","Kaivalya Vohra"],y:2021,ceo:"Aadit Palicha",fees:[["Seller / brand margin","Product based, roughly 10% to 25%"],["Customer","Handling and delivery fee on small orders"]]},
+ {n:"Swiggy Instamart",cat:"Food & Quick Commerce",f:["Sriharsha Majety","Nandan Reddy","Rahul Jaimini"],y:2020,ceo:"Sriharsha Majety (Swiggy)",fees:[["Seller / brand margin","Product based, roughly 10% to 25%"],["Customer","Handling and delivery fee on small orders"]]},
+
+ {n:"Zerodha",cat:"Stock Brokers",f:["Nithin Kamath","Nikhil Kamath"],y:2010,ceo:"Nithin Kamath",fees:[["Delivery","₹0"],["Intraday / F&O","₹20 or 0.03% per order, whichever is lower"],["Yearly charge","Demat AMC ₹300"]]},
+ {n:"Groww",cat:"Stock Brokers",f:["Lalit Keshre","Harsh Jain","Neeraj Singh","Ishan Bansal"],y:2016,ceo:"Lalit Keshre",fees:[["Delivery and intraday","₹20 or 0.1% per order, whichever is lower"],["Yearly charge","Demat AMC ₹0"]]},
+ {n:"Upstox",cat:"Stock Brokers",f:["Ravi Kumar","Raghu Kumar","Shrini Viswanath"],y:2009,ceo:"Ravi Kumar",fees:[["Delivery","₹20 or 2.5% per order, whichever is lower"],["Intraday / F&O","₹20 or 0.1% per order, whichever is lower"]]},
+ {n:"Angel One",cat:"Stock Brokers",f:["Dinesh Thakkar"],y:1987,ceo:"Dinesh Thakkar",fees:[["Delivery and intraday","₹20 or 0.1% per order, whichever is lower"],["Yearly charge","Demat AMC ₹0 (first year free, then small charge)"]]},
+ {n:"5paisa",cat:"Stock Brokers",f:["IIFL Group (Nirmal Jain)"],y:2016,ceo:"Prakarsh Gagdani",fees:[["All segments","Flat ₹20 per order"]]},
+
+ {n:"Croma",cat:"Electronics",f:["Tata Group"],y:2006,ceo:"Shibashis Roy",fees:[["Type","Retailer, no seller commission published"]]},
+ {n:"Reliance Digital",cat:"Electronics",f:["Mukesh Ambani (Reliance Retail)"],y:2007,ceo:"Reliance Retail leadership",fees:[["Type","Retailer, no seller commission published"]]},
+ {n:"Vijay Sales",cat:"Electronics",f:["Nanu Gupta"],y:1967,ceo:"Nilesh Gupta",fees:[["Type","Retailer, no seller commission published"]]},
+ {n:"boAt",cat:"Electronics",f:["Aman Gupta","Sameer Mehta"],y:2016,ceo:"Sameer Mehta (co-founder)",fees:[["Type","Brand, sells via marketplaces and own store"]]}
+];
+// ===============================
+
+const cats=["All",...new Set(DATA.map(d=>d.cat))];
+let cat="All",picked=new Set();
+const $=id=>document.getElementById(id);
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function tabs(){
+  $("tabs").innerHTML=cats.map(c=>`<button class="tab" role="tab" aria-selected="${c===cat}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+}
+
+function list(){
+  const q=$("q").value.trim().toLowerCase(),s=$("sort").value;
+  let r=DATA.filter(d=>(cat==="All"||d.cat===cat)&&(d.n+d.f.join(" ")+d.ceo).toLowerCase().includes(q));
+  r.sort((a,b)=>s==="az"?a.n.localeCompare(b.n):s==="za"?b.n.localeCompare(a.n):s==="new"?b.y-a.y:a.y-b.y);
+  $("grid").innerHTML=r.length?r.map(d=>`
+   <article class="card ${picked.has(d.n)?"sel":""}">
+     <h2>${esc(d.n)}</h2><div class="cat">${esc(d.cat)}</div>
+     <dl><dt>Founders</dt><dd>${esc(d.f.join(", "))}</dd>
+     <dt>Founded</dt><dd>${d.y}</dd>
+     <dt>CEO</dt><dd>${esc(d.ceo)}</dd></dl>
+     <dl class="fee">${d.fees.map(x=>`<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join("")}</dl>
+     <label class="pick"><input type="checkbox" data-n="${esc(d.n)}" ${picked.has(d.n)?"checked":""}> Compare</label>
+   </article>`).join(""):`<p class="empty">No companies match. Try a different search or tab.</p>`;
+}
+
+function dock(){
+  const n=picked.size;
+  $("dock").classList.toggle("on",n>0);
+  $("count").textContent=n+" selected"+(n<2?" (pick at least 2)":"");
+  $("show").disabled=n<2;
+  if(n<2)$("cmp").classList.remove("on");
+}
+
+function compare(){
+  const r=DATA.filter(d=>picked.has(d.n));
+  const feeKeys=[...new Set(r.flatMap(d=>d.fees.map(x=>x[0])))];
+  const row=(l,fn)=>`<tr><td>${l}</td>${r.map(d=>`<td>${esc(fn(d))}</td>`).join("")}</tr>`;
+  $("tbl").innerHTML=`<tr><th></th>${r.map(d=>`<th>${esc(d.n)}</th>`).join("")}</tr>`
+   +row("Category",d=>d.cat)+row("Founders",d=>d.f.join(", "))+row("Founded",d=>d.y)+row("CEO",d=>d.ceo)
+   +feeKeys.map(k=>row(k,d=>(d.fees.find(x=>x[0]===k)||[0,"Not listed"])[1])).join("");
+  $("cmp").classList.add("on");
+  $("cmp").scrollIntoView({behavior:"smooth"});
+}
+
+$("tabs").onclick=e=>{const b=e.target.closest(".tab");if(b){cat=b.dataset.c;tabs();list()}};
+$("q").oninput=list;$("sort").onchange=list;
+$("grid").onchange=e=>{const n=e.target.dataset.n;if(!n)return;e.target.checked?picked.add(n):picked.delete(n);list();dock();if($("cmp").classList.contains("on")&&picked.size>1)compare()};
+$("clear").onclick=()=>{picked.clear();list();dock()};
+$("show").onclick=compare;
+tabs();list();dock();
+</script>
+</body>
+  </html>
+  
